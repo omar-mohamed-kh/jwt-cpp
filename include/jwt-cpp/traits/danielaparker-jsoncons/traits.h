@@ -63,6 +63,15 @@ namespace jwt {
 			};
 			class array_type : public json::array {
 			public:
+				using value_type = json;
+
+				array_type() = default;
+				array_type(const array_type&) = default;
+				explicit array_type(const json::array& o) : json::array(o) {}
+				array_type(array_type&&) = default;
+				explicit array_type(json::array&& o) : json::array(std::move(o)) {}
+				~array_type() = default;
+
 				value_type const& front() const { return this->operator[](0U); }
 			};
 			using string_type = std::string; // current limitation of traits implementation
@@ -87,12 +96,14 @@ namespace jwt {
 
 			static object_type as_object(const json& val) {
 				if (val.type() != jsoncons::json_type::object_value) throw std::bad_cast();
-				return object_type(val.object_value());
+				auto range{val.object_range()};
+				return object_type(json::object(std::begin(range), std::end(range)));
 			}
 
 			static array_type as_array(const json& val) {
 				if (val.type() != jsoncons::json_type::array_value) throw std::bad_cast();
-				return val.array_value();
+				auto range{val.array_range()};
+				return array_type(json::array(std::begin(range), std::end(range)));
 			}
 
 			static string_type as_string(const json& val) {
